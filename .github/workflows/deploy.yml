@@ -10,6 +10,8 @@ on:
 env:
   S3_BUCKET_NAME: happyjudybucket
   AWS_REGION: ap-northeast-2
+  CODEDEPLOY_NAME: judy_codedeploy
+  CODEDEPLOY_GROUP: production
 
 jobs:
   build:
@@ -23,7 +25,7 @@ jobs:
         uses: actions/setup-java@v2
         with:
           java-version: '17'
-          distribution: 'adopt'
+          distribution: 'temurin'
           
       - name: Grant execute permission for gradlew
         run: chmod +x ./gradlew  # gradlew에 실행 권한 부여
@@ -42,19 +44,10 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ap-northeast-2  # 서울 리전 지정
-
+          aws-region: ${{ env.AWS_REGION }}
+      
       - name: Upload to S3
-        run: aws s3 cp --region ap-northeast-2 ./$GITHUB_SHA.zip s3://happyjudybucket/$GITHUB_SHA.zip  # 압축된 파일을 S3에 업로드
-        shell: bash
+        run: aws s3 cp --region ${{ env.AWS_REGION }} ./$GITHUB_SHA.zip s3://$S3_BUCKET_NAME/$GITHUB_SHA.zip
 
-      - name: Deploy to CodeDeploy
-        run: |
-          aws deploy create-deployment \
-            --application-name judy_codedeploy \
-            --deployment-group-name production \
-            --s3-location bucket=happyjudybucket,key=$GITHUB_SHA.zip,bundleType=zip \
-            --region ap-northeast-2
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      - name: Code Deploy
+        run: aws deploy create-deployment --application-name $CODEDEPLOY_NAME --deployment-config-name CodeDeployDefault.AllAtOnce --deployment-group-name $CODEDEPLOY_GROUP --s3-location bucket=$S3_BUCKET_NAME,bundleType=zip,key=$GITHUB_SHA.zip
