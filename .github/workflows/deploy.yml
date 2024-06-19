@@ -1,0 +1,39 @@
+name: github-action-test
+
+on:
+  push:
+    branches: [ main ]  # main 브랜치에 push가 있을 때 실행
+  pull_request:
+    branches: [ main ]  # main 브랜치로의 PR이 있을 때 실행
+  workflow_dispatch:  # 수동 실행 트리거
+
+jobs:
+  build:
+    runs-on: ubuntu-latest  # 워크플로우가 실행될 OS 환경 지정
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3  # 소스 코드를 체크아웃
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x ./gradlew  # gradlew에 실행 권한 부여
+        shell: bash
+
+      - name: Build with Gradle
+        run: ./gradlew build  # Gradle을 사용하여 빌드
+        shell: bash
+
+      - name: Make zip file
+        run: zip -r ./$GITHUB_SHA.zip .  # 빌드된 파일들을 zip으로 압축
+        shell: bash
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1  # AWS 인증 설정
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-northeast-2  # 서울 리전 지정
+
+      - name: Upload to S3
+        run: aws s3 cp --region ap-northeast-2 ./$GITHUB_SHA.zip s3://happyjudybucket/$GITHUB_SHA.zip  # 압축된 파일을 S3에 업로드
+        shell: bash
