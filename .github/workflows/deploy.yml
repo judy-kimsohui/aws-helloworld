@@ -47,3 +47,14 @@ jobs:
       - name: Upload to S3
         run: aws s3 cp --region ap-northeast-2 ./$GITHUB_SHA.zip s3://happyjudybucket/$GITHUB_SHA.zip  # 압축된 파일을 S3에 업로드
         shell: bash
+
+      - name: Deploy to CodeDeploy
+        run: |
+          aws deploy create-deployment \
+            --application-name judy_codedeploy \
+            --deployment-group-name production \
+            --s3-location bucket=happyjudybucket,key=$GITHUB_SHA.zip,bundleType=zip \
+            --region ap-northeast-2
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
