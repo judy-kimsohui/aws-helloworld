@@ -7,6 +7,10 @@ on:
     branches: [ main ]  # main 브랜치로의 PR이 있을 때 실행
   workflow_dispatch:  # 수동 실행 트리거
 
+env:
+  S3_BUCKET_NAME: happyjudybucket
+  AWS_REGION: ap-northeast-2
+
 jobs:
   build:
     runs-on: ubuntu-latest  # 워크플로우가 실행될 OS 환경 지정
