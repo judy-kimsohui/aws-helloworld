@@ -1,9 +1,73 @@
 name: 🚀 Deploy workflow on test environment
 
 on:
-  push:
-    branches: ['release/v**']
+    push:
+        branches: [develop, 'release/v**']
+    pull_request:
+        branches: [develop]
 
 jobs:
-  deploy:
-    environment: test
+    build:
+        runs-on: ubuntu-latest
+        strategy:
+            matrix:
+                node-version: [18.15.0]
+        steps:
+            - name: ✅ Checkout branch
+              uses: actions/checkout@v3
+
+            - name: 📀 Install Node.js ${{ matrix.node-version }}
+              uses: actions/setup-node@v3
+              with:
+                node-version: ${{ matrix.node-version }}
+
+            - name: ✨ Install pnpm
+              uses: pnpm/action-setup@v2
+              id: pnpm-install
+              with:
+                version: 7.29.3
+                run_install: false
+
+            - name: 🚛 Get pnpm cache store directory
+              id: pnpm-cache
+              shell: bash
+              run: |
+                  echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+
+            - name: ⚡️ Setup pnpm cache
+              uses: actions/cache@v3
+              with:
+                path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+                key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+                restore-keys: |
+                     ${{ runner.os }}-pnpm-store-
+
+            - name: 📦 Install dependencies
+              run: pnpm install
+
+            - name: 🔨 Build Project
+              run: pnpm build
+
+    deploy:
+        if: contains(github.ref_name, 'release/v')
+        needs: build
+        env:
+          ENV_PATH: .env
+          S3_BUCKET_DIR_NAME: test
+          DEPLOYMENT_GROUP_NAME: test
+        runs-on: ubuntu-latest
+        steps:
+          - name: ✅ Checkout branch
+            uses: actions/checkout@v3
+
+          - name: 🗂️ Make config folder
+            run: mkdir -p config
+
+          - name: ⚙️ Create .env file
+            run: |
+                touch ${{ env.ENV_PATH }}
+                echo DOMAIN_FIR=${{ secrets.DOMAIN_FIR }} >> ${{ env.ENV_PATH }}
+                echo SOCKET_PORT_PROD=${{ secrets.SOCKET_PORT_PROD }} >> ${{ env.ENV_PATH }}
+                echo SOCKET_PORT_TEST=${{ secrets.SOCKET_PORT_TEST }} >> ${{ env.ENV_PATH }}
+          
+          - name
