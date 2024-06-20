@@ -9,7 +9,7 @@ on:
 
 env:
   S3_BUCKET_NAME: happyjudybucket
-  AWS_REGION: us-east-1
+  AWS_REGION: ap-northeast-2
   CODEDEPLOY_NAME: judy_codedeploy
   CODEDEPLOY_GROUP: production
 
