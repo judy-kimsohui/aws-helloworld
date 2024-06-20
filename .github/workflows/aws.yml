@@ -8,11 +8,10 @@ on:
   workflow_dispatch:
 
 env:
-  S3_BUCKET_NAME: happyjudybucket
+  S3_BUCKET_NAME: cutiejudybucket
   AWS_REGION: ap-northeast-2
-  CODEDEPLOY_NAME: judy_codedeploy
-  CODEDEPLOY_GROUP: production
-
+  CODEDEPLOY_NAME: judy-application
+  CODEDEPLOY_GROUP: judy-deploy-group
 jobs:
   build:
     runs-on: ubuntu-latest
